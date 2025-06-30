@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhook Test - AI Wallpaper Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-tools"></i> Webhook Test</h1>
+            <p>Test your N8N webhook configuration</p>
+        </header>
+
+        <div class="wallpaper-form">
+            <div class="form-group">
+                <label for="webhookUrl">Webhook URL:</label>
+                <input type="url" id="webhookUrl" value="https://n8n-pba6.onrender.com/webhook/defd9e82-00be-4c15-b5f3-3be6c7b8fc04" style="font-family: monospace; font-size: 0.9rem;">
+            </div>
+
+            <div class="form-group">
+                <button id="testWebhook" class="submit-btn">
+                    <span class="btn-text">Test Webhook</span>
+                    <i class="fas fa-spinner fa-spin loading-spinner" style="display: none;"></i>
+                </button>
+            </div>
+
+            <div id="testResult" class="test-result" style="display: none; margin-top: 20px; font-family: monospace; font-size: 0.9rem;"></div>
+        </div>
+
+        <div class="instructions" style="margin-top: 30px; background: rgba(30, 30, 30, 0.8); padding: 20px; border-radius: 15px;">
+            <h3>N8N Webhook Setup Instructions:</h3>
+            <ol style="line-height: 1.8;">
+                <li>Go to your N8N workflow</li>
+                <li>Click the <strong>"Execute workflow"</strong> button to activate the test webhook</li>
+                <li>Click "Test Webhook" above to verify it's working</li>
+                <li>Once successful, go back to the <a href="/" style="color: #6c5ce7;">main form</a></li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('testWebhook').addEventListener('click', async function() {
+            const btn = this;
+            const btnText = btn.querySelector('.btn-text');
+            const spinner = btn.querySelector('.loading-spinner');
+            const result = document.getElementById('testResult');
+            const webhookUrl = document.getElementById('webhookUrl').value;
+
+            // Set loading state
+            btn.disabled = true;
+            btnText.textContent = 'Testing...';
+            spinner.style.display = 'inline-block';
+            result.style.display = 'none';
+
+            try {
+                const testData = {
+                    test: true,
+                    visualTheme: 'Test',
+                    timestamp: new Date().toISOString()
+                };
+
+                const response = await fetch('/test-webhook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ webhookUrl, testData })
+                });
+
+                const resultData = await response.json();
+                
+                result.style.display = 'block';
+                if (response.ok && resultData.success) {
+                    result.innerHTML = '<div style="color: #00ff88; border: 2px solid rgba(0, 255, 136, 0.3); padding: 15px; border-radius: 10px; background: rgba(0, 255, 136, 0.1);"><i class="fas fa-check-circle"></i> Webhook is working! You can now use the main form.</div>';
+                } else {
+                    result.innerHTML = '<div style="color: #ff6b6b; border: 2px solid rgba(255, 107, 107, 0.3); padding: 15px; border-radius: 10px; background: rgba(255, 107, 107, 0.1);"><i class="fas fa-exclamation-triangle"></i> Error: ' + (resultData.error || 'Unknown error') + '</div>';
+                }
+
+            } catch (error) {
+                result.style.display = 'block';
+                result.innerHTML = '<div style="color: #ff6b6b; border: 2px solid rgba(255, 107, 107, 0.3); padding: 15px; border-radius: 10px; background: rgba(255, 107, 107, 0.1);"><i class="fas fa-exclamation-triangle"></i> Network error: ' + error.message + '</div>';
+            }
+
+            // Reset button state
+            btn.disabled = false;
+            btnText.textContent = 'Test Webhook';
+            spinner.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
